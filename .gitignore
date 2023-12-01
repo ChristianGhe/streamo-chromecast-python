@@ -1,0 +1,6 @@
+/venv
+/ffmpeg
+/hls
+/tracks
+
+video_list.json
