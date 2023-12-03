@@ -1,5 +1,7 @@
 import json
+import os
 import subprocess
+import time
 from queue import Queue
 
 
@@ -41,25 +43,31 @@ def get_video_info(video_path, queue: Queue = None, ffmpeg_path=None, ffprobe_pa
 
 # stream video using ffmpeg as cmd line commands
 def stream_video_for_chromecast(video_path, base_folder, video_stream_index=0, audio_stream_index=0, ffmpeg_path=None):
-    output = subprocess.check_output(
-        [ffmpeg_path if ffmpeg_path else 'ffmpeg',
-         '-i', video_path,
-         f'-map 0:v:{video_stream_index} -map 0:a:{audio_stream_index}',
-         '-c:v libx264',
-         '-c:a aac -ac 2 -ar 44100 -level 4.1',
-         '-maxrate 10M -bufsize 20M',
-         '-hls_time 10 -hls_list_size 0',
-         f'-hls_base_url /hls/{base_folder}',
-         f'-hls_segment_filename /{base_folder}/%03d.ts',
-         f'/hls/{base_folder}/{base_folder}.m3u8'
-         ],
-        stderr=subprocess.STDOUT).decode().split('\n')
-    print("output:", output)
+    input = [
+        ffmpeg_path if ffmpeg_path else './ffmpeg/ffmpeg',
+        '-loglevel', 'verbose',
+        '-i',
+        video_path,
+        '-map', f'0:v:{video_stream_index}', '-map', f'0:a:{audio_stream_index}',
+        '-c:v', 'libx264', '-c:a', 'aac', '-ac', '2', '-ar', '44100',
+        '-level', '4.1', '-maxrate', '10M',
+        '-bufsize', '20M', '-hls_time', '10', '-hls_list_size', '0', '-hls_base_url', f'./hls/{base_folder}/',
+        '-hls_segment_filename',
+        f'./hls/{base_folder}/%03d.ts',
+        f'./hls/{base_folder}/{base_folder}.m3u8'
+    ]
+    print("input:", input)
+    try:
+        output = subprocess.check_output(input, stderr=subprocess.STDOUT)
+        print("output:", output)
+    except subprocess.CalledProcessError as e:
+        print('Command failed with exit status', e.returncode)
+        print('Output:', e.output.decode())
 
 
 def stream_subtitle_for_chromecast(video_path, base_folder, ffmpeg_path=None):
     output = subprocess.check_output(
-        [ffmpeg_path if ffmpeg_path else 'ffmpeg',
+        [ffmpeg_path if ffmpeg_path else '/ffmpeg/ffmpeg',
          '-i', video_path,
          '-map 0:s:0',
          '-c:s webvtt',
@@ -70,6 +78,16 @@ def stream_subtitle_for_chromecast(video_path, base_folder, ffmpeg_path=None):
 
 
 if __name__ == '__main__':
+    base_folder = "Arthur_Christmas_2011_720p_BluRay_DD_5_1_x264-playHD"
+    video_path = "D:\\Movies\\Arthur.Christmas.2011.720p.BluRay.DD+5.1.x264-playHD\\Arthur.Christmas.2011.720p.BluRay.DD+5.1.x264-playHD.mkv"
+    # get_video_info(video_path)
+    # create folder if not exists
+    # os.makedirs(f'/hls/{base_folder}', exist_ok=True)
     stream_video_for_chromecast(
-        "D:\\Movies\\Arthur.Christmas.2011.720p.BluRay.DD+5.1.x264-playHD\\Arthur.Christmas.2011.720p.BluRay.DD+5.1.x264-playHD.mkv")
+        video_path,
+        base_folder,
+        0,
+        1,
+    )
+    time.sleep(10)
     # get_video_info("D:\Movies\Enemy 2013 1080p BluRay x264 EbP\Enemy 2013 1080p BluRay x264 EbP.mkv")
