@@ -2,6 +2,9 @@ from flask import Flask, render_template, send_from_directory
 from flask_cors import CORS
 from threading import Thread
 
+from werkzeug.serving import make_server
+from get_local_ip import get_local_ip_address
+
 
 class Server:
     def __init__(self):
@@ -33,17 +36,18 @@ class Server:
                 # mime type for ts files
                 mimetype = 'video/MP2T'
 
-            return send_from_directory("hls/", filename, mimetype=mimetype)
+            return send_from_directory("hls/" + filename, filename, mimetype=mimetype)
 
         self.server = None
+        self.thread = None
 
     def start(self):
-        self.server = Thread(target=self.app.run,
-                             kwargs={"host": "0.0.0.0", "port": 3432, "threaded": True, "debug": True,
-                                     "use_reloader": False})
-        self.server.start()
+        self.server = make_server(get_local_ip_address(), 3432, self.app)
+        self.thread = Thread(target=self.server.serve_forever)
+        self.thread.start()
 
     def stop(self):
         if self.server is not None:
-            self.server.terminate()
+            self.server.shutdown()
+            self.thread.join()
             self.server = None
