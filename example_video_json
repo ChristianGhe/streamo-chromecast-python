@@ -1,0 +1,36 @@
+{
+    "categories": [
+        {
+            "name": "Movies",
+            "hls":"http://192.168.50.123:3432/hls/",
+            "dash":"https://commondatastorage.googleapis.com/gtv-videos-bucket/CastVideos/dash/",
+            "mp4":"https://commondatastorage.googleapis.com/gtv-videos-bucket/CastVideos/mp4/",
+            "images":"https://commondatastorage.googleapis.com/gtv-videos-bucket/CastVideos/images/",
+            "tracks":"http://192.168.50.123:3432/tracks/",
+            "videos": [
+                {
+                    "subtitle": "Fusce id nisi turpis. Praesent viverra bibendum semper. Donec tristique, orci sed",
+                    "sources": [
+                        {
+                            "type": "hls",
+                            "mime": "application/x-mpegurl",
+                            "url": "DesigningForGoogleCast.m3u8"
+                        }
+                    ],
+                    "thumb": "images/DesigningForGoogleCast-480x270.jpg",
+                    "image-480x270": "480x270/DesigningForGoogleCast2-480x270.jpg",
+                    "image-780x1200": "780x1200/DesigningForGoogleCast-887x1200.jpg",
+                    "title": "Designing For Google Cast",
+                    "studio": "Google IO - 2014",
+                    "duration" : 333,
+                    "tracks": [
+                        {
+                            "id": "1",
+                            "type": "text",
+                            "subtype": "captions",
+                            "contentId": "DesigningForGoogleCast-en.vtt",
+                            "name": "English Subtitle",
+                            "language": "en-US"
+                        }
+                    ]
+                }
