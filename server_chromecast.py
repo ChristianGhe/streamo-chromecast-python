@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask, render_template, send_from_directory
 from flask_cors import CORS
 from threading import Thread
@@ -21,12 +23,16 @@ class Server:
 
         @self.app.route('/video_list.json')
         def get_info_json():
-            return send_from_directory('.', 'video_list.json')
+            print(os.getcwd())
+            print(self.app.config.get('APPLICATION_ROOT'))
+            filename = 'video_list.json'
+            directory = '.'
+            return send_from_directory(directory, filename)
 
         @self.app.route('/tracks/<path:filename>')
         def get_subtitle(filename):
             # return subtitles with file
-            return send_from_directory('tracks/', filename, mimetype="text/vtt")
+            return send_from_directory('tracks', filename, mimetype="text/vtt")
 
         @self.app.route('/hls/<path:filename>')
         def stream(filename):
@@ -36,7 +42,8 @@ class Server:
                 # mime type for ts files
                 mimetype = 'video/MP2T'
 
-            return send_from_directory("hls/" + filename, filename, mimetype=mimetype)
+            directory = 'hls'
+            return send_from_directory(directory, filename, mimetype=mimetype)
 
         self.server = None
         self.thread = None

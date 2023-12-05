@@ -3,6 +3,7 @@ import queue
 import sys
 import threading
 import time
+import cryptography
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QCoreApplication
