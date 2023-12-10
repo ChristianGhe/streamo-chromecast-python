@@ -1,5 +1,4 @@
 import json
-import os
 import subprocess
 import time
 from queue import Queue
@@ -14,6 +13,10 @@ def parse_stream(stream):
     title = stream['tags']['title'] if 'tags' in stream and 'title' in stream['tags'] else 't'
     codec = stream['codec_name'] if 'codec_name' in stream else 'no codec'
     return language + ' - ' + title + ' - ' + codec
+
+
+def duration_to_seconds(duration):
+    return int(float(duration))
 
 
 def get_video_info(video_path, queue: Queue = None, ffmpeg_path=None, ffprobe_path=None):
@@ -38,12 +41,12 @@ def get_video_info(video_path, queue: Queue = None, ffmpeg_path=None, ffprobe_pa
         elif stream['codec_type'] == 'subtitle':
             subtitle_streams.append(parse_stream(stream))
     if queue is not None:
-        queue.put((video_streams, audio_streams, subtitle_streams))
+        queue.put((video_streams, audio_streams, subtitle_streams, duration_to_seconds(metadata['format']['duration'])))
 
 
 # stream video using ffmpeg as cmd line commands
 def stream_video_for_chromecast(video_path, base_folder, video_stream_index=0, audio_stream_index=0, ffmpeg_path=None):
-    input = [
+    input_code = [
         ffmpeg_path if ffmpeg_path else './ffmpeg/ffmpeg',
         '-loglevel', 'verbose',
         '-i',
@@ -56,9 +59,9 @@ def stream_video_for_chromecast(video_path, base_folder, video_stream_index=0, a
         f'./hls/{base_folder}/%03d.ts',
         f'./hls/{base_folder}/{base_folder}.m3u8'
     ]
-    print("input:", input)
+    print("input:", input_code)
     try:
-        output = subprocess.check_output(input, stderr=subprocess.STDOUT)
+        output = subprocess.check_output(input_code, stderr=subprocess.STDOUT)
         print("output:", output)
     except subprocess.CalledProcessError as e:
         print('Command failed with exit status', e.returncode)
@@ -78,14 +81,14 @@ def stream_subtitle_for_chromecast(video_path, base_folder, ffmpeg_path=None):
 
 
 if __name__ == '__main__':
-    base_folder = "Arthur_Christmas_2011_720p_BluRay_DD_5_1_x264-playHD"
-    video_path = "D:\\Movies\\Arthur.Christmas.2011.720p.BluRay.DD+5.1.x264-playHD\\Arthur.Christmas.2011.720p.BluRay.DD+5.1.x264-playHD.mkv"
+    __base_folder = "Arthur_Christmas_2011_720p_BluRay_DD_5_1_x264-playHD"
+    __video_path = "D:\\Movies\\Arthur.Christmas.2011.720p.BluRay.DD+5.1.x264-playHD\\Arthur.Christmas.2011.720p.BluRay.DD+5.1.x264-playHD.mkv"
     # get_video_info(video_path)
     # create folder if not exists
     # os.makedirs(f'/hls/{base_folder}', exist_ok=True)
     stream_video_for_chromecast(
-        video_path,
-        base_folder,
+        __video_path,
+        __base_folder,
         0,
         1,
     )
