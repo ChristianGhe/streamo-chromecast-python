@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLa
 
 from server_chromecast import Server
 from video_streaming_commands import get_video_info, stream_video_for_chromecast, stream_subtitle_for_chromecast
+from video_list_handler import __data as video_list_data, add_video_to_list
 
 
 def parse_filename(path):
@@ -52,6 +53,8 @@ class VideoStreamer(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.duration = 0
+        self.video_info = None
         self.video = None
         self.filename = None
         self.__connection_thread_running = True
@@ -105,9 +108,10 @@ class VideoStreamer(QWidget):
         print("Starting get info thread")
         while self.__connection_thread_running:
             try:
-                video_info = self.__queue_get_info.get(timeout=0.5)
+                self.video_info = self.__queue_get_info.get(timeout=0.5)
+                self.duration = self.video_info[3]
                 print("Got video info")
-                self.update_dropdowns(video_info[0], video_info[1], video_info[2])
+                self.update_dropdowns(self.video_info[0], self.video_info[1], self.video_info[2])
             except queue.Empty:
                 continue
         print("Stopping get info thread")
@@ -122,6 +126,8 @@ class VideoStreamer(QWidget):
         # Set filename
         self.filename = fname[0]
         self.video = (parse_filename(self.filename))
+        print(self.video)
+        print(self.filename)
 
         # Get video info
         threading.Thread(target=get_video_info, args=(self.filename, self.__queue_get_info)).start()
@@ -131,15 +137,23 @@ class VideoStreamer(QWidget):
         # get selected items from combo boxes
         video_stream_index = self.video_dropdown.currentIndex()
         audio_stream_index = self.audio_dropdown.currentIndex()
+        subtitle_stream_index = self.subtitle_dropdown.currentIndex()
 
-        print("options", video_stream_index, audio_stream_index)
+        print("options", "video index:", video_stream_index, "audio index:", audio_stream_index, "subtitle index:",
+              subtitle_stream_index, "duration:", self.duration)
+        threading.Thread(target=add_video_to_list,
+                         args=('video_list.json', self.video, self.duration, self.video_info[2][subtitle_stream_index],
+                               self.video_info[2][subtitle_stream_index])).start()
+
+        threading.Thread(target=stream_video_for_chromecast,
+                         args=(self.filename, self.video, video_stream_index, audio_stream_index)).start()
+        threading.Thread(target=stream_subtitle_for_chromecast,
+                         args=(self.filename, self.video, subtitle_stream_index)).start()
 
     def start_subtitles_stream(self):
         print("Starting subtitles stream")
         subtitle_stream_index = self.subtitle_dropdown.currentIndex()
         print("options", subtitle_stream_index)
-
-        # threading.Thread(target=get_video_info, args=(self.filename, self.__queue_get_info)).start()
 
     def dispose(self):
         self.__connection_thread_running = False
@@ -152,7 +166,7 @@ class VideoStreamer(QWidget):
 
 
 if __name__ == "__main__":
-    server = Server()
+    server = Server(video_list_data)
     server.start()
     app = VideoStreamerApp()
     app.run(lambda: server.stop())
