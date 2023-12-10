@@ -6,12 +6,15 @@ from threading import Thread
 
 from werkzeug.serving import make_server
 from get_local_ip import get_local_ip_address
+from video_list_handler import init_video_list, set_ip_address_to_data
 
 
 class Server:
-    def __init__(self):
+    def __init__(self, data):
         self.app = Flask(__name__)
         self.cors = CORS(self.app)
+        self.__data = data
+        self.__video_list_file = 'video_list.json'
 
         @self.app.route('/favicon.ico')
         def favicon():
@@ -25,7 +28,7 @@ class Server:
         def get_info_json():
             print(os.getcwd())
             print(self.app.config.get('APPLICATION_ROOT'))
-            filename = 'video_list.json'
+            filename = self.__video_list_file
             directory = '.'
             return send_from_directory(directory, filename)
 
@@ -49,7 +52,11 @@ class Server:
         self.thread = None
 
     def start(self):
-        self.server = make_server(get_local_ip_address(), 3432, self.app)
+        ip_address = get_local_ip_address()
+        port = 3423
+        init_video_list(self.__video_list_file, self.__data, ip_address, port)
+        set_ip_address_to_data(self.__video_list_file, ip_address, port)
+        self.server = make_server(ip_address, port, self.app)
         self.thread = Thread(target=self.server.serve_forever)
         self.thread.start()
 
