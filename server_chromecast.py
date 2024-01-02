@@ -6,7 +6,7 @@ from threading import Thread
 
 from werkzeug.serving import make_server
 from get_local_ip import get_local_ip_address
-from video_list_handler import init_video_list, set_ip_address_to_data
+from video_list_handler import init_video_list, set_ip_address_to_data, __data as video_list_data
 
 
 class Server:
@@ -53,7 +53,7 @@ class Server:
 
     def start(self):
         ip_address = get_local_ip_address()
-        port = 3423
+        port = 3432
         init_video_list(self.__video_list_file, self.__data, ip_address, port)
         set_ip_address_to_data(self.__video_list_file, ip_address, port)
         self.server = make_server(ip_address, port, self.app)
@@ -65,3 +65,8 @@ class Server:
             self.server.shutdown()
             self.thread.join()
             self.server = None
+
+
+if __name__ == '__main__':
+    server = Server(video_list_data)
+    server.start()
