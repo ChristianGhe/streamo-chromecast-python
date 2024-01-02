@@ -10,8 +10,8 @@ from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QComboBox
 
 from server_chromecast import Server
-from video_streaming_commands import get_video_info, stream_video_for_chromecast, stream_subtitle_for_chromecast
-from video_list_handler import __data as video_list_data, add_video_to_list
+from video_streaming_commands import get_video_info, stream_video_for_chromecast, stream_subtitle_for_chromecast, print_current_dir
+from video_list_handler import __data as video_list_data, add_video_to_list, add_subtitle_to_list
 
 
 def parse_filename(path):
@@ -21,8 +21,10 @@ def parse_filename(path):
     # Remove the file extension
     filename_without_extension = os.path.splitext(base_filename)[0]
 
-    # Replace '.' with '_' in the filename
-    filename_with_underscores = filename_without_extension.replace('.', '_')
+    # Replace '.', '-', '+', '[', ']' with '_' in the filename
+    trans = str.maketrans(".+-[]", "_____")
+    filename_with_underscores = filename_without_extension.translate(trans)
+    # filename_with_underscores = filename_without_extension.replace('.', '_').replace('-', '_').replace('+', '_')
 
     return filename_with_underscores
 
@@ -149,11 +151,17 @@ class VideoStreamer(QWidget):
                          args=(self.filename, self.video, video_stream_index, audio_stream_index)).start()
         threading.Thread(target=stream_subtitle_for_chromecast,
                          args=(self.filename, self.video, subtitle_stream_index)).start()
+        # threading.Thread(target=print_current_dir).start()
 
     def start_subtitles_stream(self):
         print("Starting subtitles stream")
         subtitle_stream_index = self.subtitle_dropdown.currentIndex()
         print("options", subtitle_stream_index)
+        threading.Thread(target=add_subtitle_to_list,
+                         args=('video_list.json', self.video, self.duration, self.video_info[2][subtitle_stream_index],
+                               self.video_info[2][subtitle_stream_index])).start()
+        threading.Thread(target=stream_subtitle_for_chromecast,
+                         args=(self.filename, self.video, subtitle_stream_index)).start()
 
     def dispose(self):
         self.__connection_thread_running = False
