@@ -17,6 +17,7 @@ __data = {
 
 
 def init_video_list(filename, data, ip_address, port):
+    print(f"Initializing video_list.json with ip address {ip_address} and port {port}")
     # Create video_list.json if it doesn't exist and create base structure
     if not os.path.exists(filename):
         with open(filename, 'w') as f:
@@ -28,11 +29,15 @@ def init_video_list(filename, data, ip_address, port):
 
 
 def set_ip_address_to_data(file_name, ip_address, port):
+    print(f"Setting ip address {ip_address} to video_list.json")
     with open(file_name, 'r') as f:
         # load json file and replace ip of tracks and hls for "Movies" category
         data = json.load(f)
         data["categories"][0]["hls"] = f"http://{ip_address}:{port}/hls/"
         data["categories"][0]["tracks"] = f"http://{ip_address}:{port}/tracks/"
+        # save json file
+    with open(file_name, 'w') as f:
+        json.dump(data, f, indent=4)
 
 
 def add_video_to_list(file_name, video_name, duration, subtitle_name, subtitle_language):
