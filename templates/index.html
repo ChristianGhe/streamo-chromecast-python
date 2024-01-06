@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Video Streaming</title>
+    <title>Streamo - Chromecast</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {
             display: flex;
@@ -14,14 +15,10 @@
             background: #121212; /* Dark background */
             color: #ffffff; /* Light text color */
             font-family: Arial, sans-serif;
+            padding: 5%;
         }
-        #videoPlayer {
-            width: 80%;
-            max-width: 900px;
-        }
-        #videoSelect {
-            width: 80%;
-            max-width: 900px;
+        #videoPlayer, #videoSelect {
+            width: 100%;
             margin: 20px 0;
             background: #232323; /* Dark background for select */
             color: #ffffff; /* Light text color for select */
@@ -30,12 +27,18 @@
             display: none;
             color: #ffffff; /* Light text color for loading indicator */
         }
+        @media (min-width: 600px) {
+            #videoPlayer, #videoSelect {
+                width: 80%;
+                max-width: 900px;
+            }
+        }
     </style>
 </head>
 <body>
 <select id="videoSelect" onchange="loadVideo()"></select>
 <div id="loadingIndicator">Loading...</div>
-<video id="videoPlayer" controls></video>
+<video id="videoPlayer" controls autoplay muted></video>
 
 <script>
         var data;
@@ -103,6 +106,23 @@
                     document.getElementById('loadingIndicator').style.display = 'none';
                 });
             }
+
+            // Remove existing subtitle tracks
+            while (videoPlayer.firstChild) {
+                videoPlayer.removeChild(videoPlayer.firstChild);
+            }
+
+            // Add subtitles
+            video.tracks.forEach(track => {
+                if (track.type === 'text' && track.subtype === 'captions') {
+                    var trackElement = document.createElement('track');
+                    trackElement.kind = 'subtitles';
+                    trackElement.label = track.name;
+                    trackElement.srclang = track.language;
+                    trackElement.src = data.categories[0].tracks + track.contentId;
+                    videoPlayer.appendChild(trackElement);
+                }
+            });
         }
     </script>
 </body>
