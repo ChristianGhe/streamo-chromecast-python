@@ -3,9 +3,38 @@
 <head>
     <title>Video Streaming</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: #121212; /* Dark background */
+            color: #ffffff; /* Light text color */
+            font-family: Arial, sans-serif;
+        }
+        #videoPlayer {
+            width: 80%;
+            max-width: 900px;
+        }
+        #videoSelect {
+            width: 80%;
+            max-width: 900px;
+            margin: 20px 0;
+            background: #232323; /* Dark background for select */
+            color: #ffffff; /* Light text color for select */
+        }
+        #loadingIndicator {
+            display: none;
+            color: #ffffff; /* Light text color for loading indicator */
+        }
+    </style>
 </head>
 <body>
 <select id="videoSelect" onchange="loadVideo()"></select>
+<div id="loadingIndicator">Loading...</div>
 <video id="videoPlayer" controls></video>
 
 <script>
@@ -14,7 +43,12 @@
 
         // Fetch the JSON data from the API
         fetch('/video_list.json')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(jsonData => {
                 data = jsonData;
 
@@ -31,9 +65,15 @@
 
                 // Load the first video
                 loadVideo();
+            })
+            .catch(error => {
+                console.error('There has been a problem with your fetch operation:', error);
             });
 
         function loadVideo() {
+            // Show loading indicator
+            document.getElementById('loadingIndicator').style.display = 'block';
+
             // Get the selected video
             var videoSelect = document.getElementById('videoSelect');
             var videoIndex = videoSelect.value;
@@ -50,6 +90,8 @@
                 hls.attachMedia(videoPlayer);
                 hls.on(Hls.Events.MANIFEST_PARSED, function() {
                     videoPlayer.play();
+                    // Hide loading indicator
+                    document.getElementById('loadingIndicator').style.display = 'none';
                 });
             }
             // For browsers that do not support hls.js
@@ -57,9 +99,12 @@
                 videoPlayer.src = hlsUrl;
                 videoPlayer.addEventListener('loadedmetadata', function() {
                     videoPlayer.play();
+                    // Hide loading indicator
+                    document.getElementById('loadingIndicator').style.display = 'none';
                 });
             }
         }
     </script>
 </body>
 </html>
+
