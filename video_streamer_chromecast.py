@@ -2,16 +2,14 @@ import os
 import queue
 import sys
 import threading
-import time
-import cryptography
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QComboBox
 
 from server_chromecast import Server
-from video_streaming_commands import get_video_info, stream_video_for_chromecast, stream_subtitle_for_chromecast, print_current_dir
 from video_list_handler import __data as video_list_data, add_video_to_list, add_subtitle_to_list
+from video_streaming_commands import get_video_info, stream_video_for_chromecast, stream_subtitle_for_chromecast
 
 
 def parse_filename(path):
@@ -24,7 +22,6 @@ def parse_filename(path):
     # Replace '.', '-', '+', '[', ']' with '_' in the filename
     trans = str.maketrans(".+-[]", "_____")
     filename_with_underscores = filename_without_extension.translate(trans)
-    # filename_with_underscores = filename_without_extension.replace('.', '_').replace('-', '_').replace('+', '_')
 
     return filename_with_underscores
 
