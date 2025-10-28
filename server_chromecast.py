@@ -61,7 +61,7 @@ class Server:
                     "dash": "https://commondatastorage.googleapis.com/gtv-videos-bucket/CastVideos/dash/",
                     "mp4": "https://commondatastorage.googleapis.com/gtv-videos-bucket/CastVideos/mp4/",
                     "images": "https://commondatastorage.googleapis.com/gtv-videos-bucket/CastVideos/images/",
-                    "tracks": f"http://{self.__ip_address}/tracks/",
+                    "tracks": f"http://{self.__ip_address}:{self.__port}/tracks/",
                     "videos": movie_list
                 }]
             })
