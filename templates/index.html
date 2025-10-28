@@ -1,109 +1,412 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Streamo - Chromecast</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streamo - Premium Video Streaming</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Video Player Section */
+        .player-section {
+            margin-bottom: 3rem;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .video-container {
+            position: relative;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+            margin-bottom: 1.5rem;
+        }
+
+        #videoPlayer {
+            width: 100%;
+            display: block;
+            max-height: 70vh;
+            object-fit: contain;
+        }
+
+        .video-info {
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .video-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+
+        .video-subtitle {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 1rem;
+        }
+
+        .video-meta {
             display: flex;
-            flex-direction: column;
+            gap: 1rem;
+            flex-wrap: wrap;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        /* Library Section */
+        .library-section {
+            animation: fadeIn 0.7s ease-in;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: #fff;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .video-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .video-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+
+        .video-card.active {
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px #667eea;
+        }
+
+        .video-thumbnail {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background: #121212; /* Dark background */
-            color: #ffffff; /* Light text color */
-            font-family: Arial, sans-serif;
-            padding: 5%;
+            position: relative;
         }
-        #videoPlayer, #videoSelect {
+
+        .video-thumbnail img {
             width: 100%;
-            margin: 20px 0;
-            background: #232323; /* Dark background for select */
-            color: #ffffff; /* Light text color for select */
+            height: 100%;
+            object-fit: cover;
         }
-        #loadingIndicator {
-            display: none;
-            color: #ffffff; /* Light text color for loading indicator */
+
+        .video-thumbnail::after {
+            content: '▶';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
-        @media (min-width: 600px) {
-            #videoPlayer, #videoSelect {
-                width: 80%;
-                max-width: 900px;
+
+        .video-card:hover .video-thumbnail::after {
+            opacity: 0.9;
+        }
+
+        .video-card-info {
+            padding: 1rem;
+        }
+
+        .video-card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #fff;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            min-height: 2.5em;
+        }
+
+        .video-card-meta {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Loading Indicator */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
             }
+
+            .header {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 1.3rem;
+            }
+
+            .video-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+
+            .video-title {
+                font-size: 1.3rem;
+            }
+
+            .section-title {
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .video-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* No video selected state */
+        .no-video {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .no-video-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        /* Subtitle tracks info */
+        .subtitle-info {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .subtitle-badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid rgba(102, 126, 234, 0.4);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-right: 0.5rem;
+            margin-top: 0.5rem;
         }
     </style>
 </head>
 <body>
-<select id="videoSelect" onchange="loadVideo()"></select>
-<div id="loadingIndicator">Loading...</div>
-<video id="videoPlayer" controls autoplay muted></video>
+    <div class="header">
+        <h1>Streamo</h1>
+    </div>
 
-<script>
-    var data;
-    var hls;
+    <div class="container">
+        <!-- Video Player Section -->
+        <div class="player-section" id="playerSection" style="display: none;">
+            <div class="video-container">
+                <video id="videoPlayer" controls autoplay></video>
+            </div>
+            <div class="video-info">
+                <div class="video-title" id="currentVideoTitle">Select a video to play</div>
+                <div class="video-subtitle" id="currentVideoSubtitle"></div>
+                <div class="video-meta" id="currentVideoMeta"></div>
+                <div class="subtitle-info" id="currentSubtitleInfo"></div>
+            </div>
+        </div>
 
-    // Fetch the JSON data from the /get_info API
-    fetch('/get_info')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+        <!-- No Video Selected State -->
+        <div class="no-video" id="noVideoState">
+            <div class="no-video-icon">🎬</div>
+            <h2>Select a video to start watching</h2>
+        </div>
+
+        <!-- Video Library -->
+        <div class="library-section">
+            <h2 class="section-title">Your Library</h2>
+            <div id="loadingIndicator" class="loading">
+                <div class="spinner"></div>
+                <p>Loading your videos...</p>
+            </div>
+            <div class="video-grid" id="videoGrid"></div>
+        </div>
+    </div>
+
+    <script>
+        let data;
+        let hls;
+        let currentVideoIndex = null;
+
+        // Format duration
+        function formatDuration(seconds) {
+            if (!seconds) return '';
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
             }
-            return response.json();
-        })
-        .then(jsonData => {
-            data = jsonData;
+            return `${minutes}m`;
+        }
 
-            // Get the select element
-            var videoSelect = document.getElementById('videoSelect');
+        // Load video
+        function loadVideo(videoIndex) {
+            currentVideoIndex = videoIndex;
+            const video = data.categories[0].videos[videoIndex];
+            const source = video.sources.find(source => source.type === 'hls');
+            const hlsUrl = data.categories[0].hls + source.url;
 
-            // Add an option to the select for each video
-            data.categories[0].videos.forEach((video, index) => {
-                var option = document.createElement('option');
-                option.value = index;
-                option.text = video.title;
-                videoSelect.add(option);
+            // Show player section
+            document.getElementById('playerSection').style.display = 'block';
+            document.getElementById('noVideoState').style.display = 'none';
+
+            // Update video info
+            document.getElementById('currentVideoTitle').textContent = video.title;
+            document.getElementById('currentVideoSubtitle').textContent = video.subtitle || video.studio || '';
+
+            // Update meta info
+            const metaHtml = [];
+            if (video.studio) {
+                metaHtml.push(`<div class="meta-item">📺 ${video.studio}</div>`);
+            }
+            if (video.duration) {
+                metaHtml.push(`<div class="meta-item">⏱️ ${formatDuration(video.duration)}</div>`);
+            }
+            if (video.tracks && video.tracks.length > 0) {
+                metaHtml.push(`<div class="meta-item">💬 ${video.tracks.length} subtitle(s)</div>`);
+            }
+            document.getElementById('currentVideoMeta').innerHTML = metaHtml.join('');
+
+            // Update subtitle info
+            if (video.tracks && video.tracks.length > 0) {
+                const subtitleBadges = video.tracks
+                    .filter(track => track.type === 'text' && track.subtype === 'captions')
+                    .map(track => `<span class="subtitle-badge">${track.name}</span>`)
+                    .join('');
+                document.getElementById('currentSubtitleInfo').innerHTML =
+                    '<strong>Available Subtitles:</strong><br>' + subtitleBadges;
+            } else {
+                document.getElementById('currentSubtitleInfo').innerHTML = '';
+            }
+
+            // Update active card
+            document.querySelectorAll('.video-card').forEach((card, idx) => {
+                card.classList.toggle('active', idx === videoIndex);
             });
 
-            // Load the first video
-            loadVideo();
-        })
-        .catch(error => {
-            console.error('There has been a problem with your fetch operation:', error);
-        });
+            // Set up HLS playback
+            const videoPlayer = document.getElementById('videoPlayer');
 
-        function loadVideo() {
-            // Show loading indicator
-            document.getElementById('loadingIndicator').style.display = 'block';
-
-            // Get the selected video
-            var videoSelect = document.getElementById('videoSelect');
-            var videoIndex = videoSelect.value;
-            var video = data.categories[0].videos[videoIndex];
-            var source = video.sources.find(source => source.type === 'hls');
-
-            // Create the full URL for the HLS stream
-            var hlsUrl = data.categories[0].hls + source.url;
-
-            // Set up hls.js
             if (Hls.isSupported()) {
+                if (hls) {
+                    hls.destroy();
+                }
                 hls = new Hls();
                 hls.loadSource(hlsUrl);
                 hls.attachMedia(videoPlayer);
                 hls.on(Hls.Events.MANIFEST_PARSED, function() {
                     videoPlayer.play();
-                    // Hide loading indicator
-                    document.getElementById('loadingIndicator').style.display = 'none';
                 });
-            }
-            // For browsers that do not support hls.js
-            else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
+            } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
                 videoPlayer.src = hlsUrl;
                 videoPlayer.addEventListener('loadedmetadata', function() {
                     videoPlayer.play();
-                    // Hide loading indicator
-                    document.getElementById('loadingIndicator').style.display = 'none';
                 });
             }
 
@@ -112,10 +415,10 @@
                 videoPlayer.removeChild(videoPlayer.firstChild);
             }
 
-            // Add subtitles
+            // Add subtitle tracks
             video.tracks.forEach(track => {
                 if (track.type === 'text' && track.subtype === 'captions') {
-                    var trackElement = document.createElement('track');
+                    const trackElement = document.createElement('track');
                     trackElement.kind = 'subtitles';
                     trackElement.label = track.name;
                     trackElement.srclang = track.language;
@@ -123,7 +426,66 @@
                     videoPlayer.appendChild(trackElement);
                 }
             });
+
+            // Scroll to player
+            document.getElementById('playerSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+
+        // Create video card
+        function createVideoCard(video, index) {
+            const card = document.createElement('div');
+            card.className = 'video-card';
+            card.onclick = () => loadVideo(index);
+
+            const thumbnail = video.thumb || video['image-480x270'] || '';
+            const thumbnailHtml = thumbnail
+                ? `<img src="${thumbnail}" alt="${video.title}" onerror="this.style.display='none'">`
+                : `<div style="display: flex; align-items: center; justify-content: center; height: 100%; font-size: 3rem; opacity: 0.3;">🎬</div>`;
+
+            card.innerHTML = `
+                <div class="video-thumbnail">
+                    ${thumbnailHtml}
+                </div>
+                <div class="video-card-info">
+                    <div class="video-card-title">${video.title}</div>
+                    <div class="video-card-meta">
+                        ${video.studio || ''} ${video.duration ? '• ' + formatDuration(video.duration) : ''}
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // Fetch and display videos
+        fetch('/get_info')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(jsonData => {
+                data = jsonData;
+                const videoGrid = document.getElementById('videoGrid');
+                const loadingIndicator = document.getElementById('loadingIndicator');
+
+                loadingIndicator.style.display = 'none';
+
+                if (data.categories[0].videos.length === 0) {
+                    videoGrid.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.5); grid-column: 1/-1;">No videos available yet.</p>';
+                    return;
+                }
+
+                data.categories[0].videos.forEach((video, index) => {
+                    videoGrid.appendChild(createVideoCard(video, index));
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching video data:', error);
+                document.getElementById('loadingIndicator').innerHTML =
+                    '<p style="color: #ff6b6b;">Failed to load videos. Please try refreshing the page.</p>';
+            });
     </script>
 </body>
 </html>
