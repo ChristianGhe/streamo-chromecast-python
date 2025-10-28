@@ -1,20 +1,23 @@
-import os
-
-from flask import Flask, render_template, send_from_directory
-from flask_cors import CORS
+import json
 from threading import Thread
 
+from flask import Flask, render_template, send_from_directory, jsonify
+from flask_cors import CORS
 from werkzeug.serving import make_server
+
 from get_local_ip import get_local_ip_address
-from video_list_handler import init_video_list, set_ip_address_to_data, __data as video_list_data
+from models import init_db, Movie
 
 
 class Server:
-    def __init__(self, data):
+    def __init__(self):
         self.app = Flask(__name__)
+        self.app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///movies.db'
         self.cors = CORS(self.app)
-        self.__data = data
-        self.__video_list_file = 'video_list.json'
+        self.__ip_address = get_local_ip_address()
+        self.__port = 3432
+
+        init_db(self.app)
 
         @self.app.route('/favicon.ico')
         def favicon():
@@ -24,13 +27,44 @@ class Server:
         def index():
             return render_template('index.html')
 
-        @self.app.route('/video_list.json')
-        def get_info_json():
-            print(os.getcwd())
-            print(self.app.config.get('APPLICATION_ROOT'))
-            filename = self.__video_list_file
-            directory = '.'
-            return send_from_directory(directory, filename)
+        @self.app.route('/get_info')
+        def get_info():
+            movies = Movie.query.all()
+            movie_list = []
+
+            for movie in movies:
+                sources = json.loads(movie.sources) if movie.sources else []
+                movie_info = {
+                    "subtitle": movie.subtitle,
+                    "sources": sources,
+                    "thumb": movie.thumb,
+                    "image-480x270": movie.image_480x270,
+                    "image-780x1200": movie.image_780x1200,
+                    "title": movie.title,
+                    "studio": movie.studio,
+                    "duration": movie.duration,
+                    "tracks": [{
+                        "id": str(track.id),
+                        "type": "text",
+                        "subtype": "captions",
+                        "contentId": track.contentId,
+                        "name": track.name,
+                        "language": track.language
+                    } for track in movie.subtitles]
+                }
+                movie_list.append(movie_info)
+
+            return jsonify({
+                "categories": [{
+                    "name": "Movies",
+                    "hls": f"http://{self.__ip_address}:{self.__port}/hls/",
+                    "dash": "https://commondatastorage.googleapis.com/gtv-videos-bucket/CastVideos/dash/",
+                    "mp4": "https://commondatastorage.googleapis.com/gtv-videos-bucket/CastVideos/mp4/",
+                    "images": "https://commondatastorage.googleapis.com/gtv-videos-bucket/CastVideos/images/",
+                    "tracks": f"http://{self.__ip_address}/tracks/",
+                    "videos": movie_list
+                }]
+            })
 
         @self.app.route('/tracks/<path:filename>')
         def get_subtitle(filename):
@@ -52,11 +86,7 @@ class Server:
         self.thread = None
 
     def start(self):
-        ip_address = get_local_ip_address()
-        port = 3432
-        init_video_list(self.__video_list_file, self.__data, ip_address, port)
-        set_ip_address_to_data(self.__video_list_file, ip_address, port)
-        self.server = make_server(ip_address, port, self.app)
+        self.server = make_server(self.__ip_address, self.__port, self.app)
         self.thread = Thread(target=self.server.serve_forever)
         self.thread.start()
 
@@ -68,5 +98,5 @@ class Server:
 
 
 if __name__ == '__main__':
-    server = Server(video_list_data)
+    server = Server()
     server.start()

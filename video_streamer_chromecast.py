@@ -8,8 +8,9 @@ from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QComboBox
 
 from server_chromecast import Server
-from video_list_handler import __data as video_list_data, add_video_to_list, add_subtitle_to_list
-from video_streaming_commands import get_video_info, stream_video_for_chromecast, stream_subtitle_for_chromecast
+from video_list_handler import add_video_to_db, add_subtitle_to_db
+from video_streaming_commands import get_video_info, stream_video_for_chromecast, stream_subtitle_for_chromecast, \
+    convert_srt_to_vtt
 
 
 def parse_filename(path):
@@ -27,9 +28,10 @@ def parse_filename(path):
 
 
 class VideoStreamerApp:
-    def __init__(self):
+    def __init__(self, flask_app):
+        self.flask_app = flask_app
         self.app = QApplication(sys.argv)
-        self.window = VideoStreamer()
+        self.window = VideoStreamer(self.flask_app)
         self.window.setWindowTitle("Streamo Chromecast")
         # self.window.thread.progress.connect(lambda i: {
         #     print("Progress: ", i),
@@ -49,13 +51,16 @@ class VideoStreamerApp:
 
 
 class VideoStreamer(QWidget):
-    def __init__(self):
+    def __init__(self, flask_app):
         super().__init__()
 
+        self.flask_app = flask_app
         self.duration = 0
         self.video_info = None
         self.video = None
+        self.srt_title = None
         self.filename = None
+        self.srt_file_path = None
         self.__connection_thread_running = True
         self.__queue_get_info = queue.Queue()
         self.__thread_get_info = threading.Thread(target=self.handle_get_info_queue)
@@ -64,10 +69,12 @@ class VideoStreamer(QWidget):
         self.btn_start_subtitle_stream = None
         self.btn_start_video_stream = None
         self.btn_browse = None
+        self.btn_browse_srt = None
         self.audio_dropdown = QComboBox(self)
         self.video_dropdown = QComboBox(self)
         self.subtitle_dropdown = QComboBox(self)
         self.label = None
+        self.label_srt = None
         self.init_ui()
 
     def init_ui(self):
@@ -76,9 +83,16 @@ class VideoStreamer(QWidget):
         self.label = QLabel("No video selected")
         vbox.addWidget(self.label)
 
-        self.btn_browse = QPushButton("Browse", self)
+        self.btn_browse = QPushButton("Browse Movie", self)
         self.btn_browse.clicked.connect(self.select_file)
         vbox.addWidget(self.btn_browse)
+
+        self.label_srt = QLabel("No srt selected")
+        vbox.addWidget(self.label_srt)
+
+        self.btn_browse_srt = QPushButton("Browse Subtitle", self)
+        self.btn_browse_srt.clicked.connect(self.select_srt_file)
+        vbox.addWidget(self.btn_browse_srt)
 
         vbox.addWidget(self.video_dropdown)
         vbox.addWidget(self.audio_dropdown)
@@ -131,6 +145,20 @@ class VideoStreamer(QWidget):
         # Get video info
         threading.Thread(target=get_video_info, args=(self.filename, self.__queue_get_info)).start()
 
+    def select_srt_file(self):
+        # Open file dialog that only allows video files
+        fname = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', '/home', 'Video files (*.srt)')
+
+        # Update label text
+        self.label_srt.setText(fname[0])
+
+        # Set filename
+        self.srt_file_path = fname[0]
+        self.srt_title = (parse_filename(self.srt_file_path))
+        self.subtitle_dropdown.addItem(self.srt_file_path)
+        print(self.srt_title)
+        print(self.srt_file_path)
+
     def start_video_stream(self):
         print("Starting video stream")
         # get selected items from combo boxes
@@ -140,22 +168,25 @@ class VideoStreamer(QWidget):
 
         print("options", "video index:", video_stream_index, "audio index:", audio_stream_index, "subtitle index:",
               subtitle_stream_index, "duration:", self.duration)
-        threading.Thread(target=add_video_to_list,
-                         args=('video_list.json', self.video, self.duration, self.video_info[2][subtitle_stream_index],
-                               self.video_info[2][subtitle_stream_index])).start()
-
+        threading.Thread(target=add_video_to_db,
+                         args=(self.flask_app, self.video, self.duration)).start()
+        print("Starting video stream thread")
         threading.Thread(target=stream_video_for_chromecast,
                          args=(self.filename, self.video, video_stream_index, audio_stream_index)).start()
-        threading.Thread(target=stream_subtitle_for_chromecast,
-                         args=(self.filename, self.video, subtitle_stream_index)).start()
-        # threading.Thread(target=print_current_dir).start()
+        print("Starting subtitle stream thread")
+        if self.srt_file_path is None:
+            threading.Thread(target=stream_subtitle_for_chromecast,
+                             args=(self.filename, self.video, subtitle_stream_index)).start()
+        else:
+            threading.Thread(target=convert_srt_to_vtt,
+                             args=(self.srt_file_path, self.srt_title)).start()
 
     def start_subtitles_stream(self):
         print("Starting subtitles stream")
         subtitle_stream_index = self.subtitle_dropdown.currentIndex()
         print("options", subtitle_stream_index)
-        threading.Thread(target=add_subtitle_to_list,
-                         args=('video_list.json', self.video, self.duration, self.video_info[2][subtitle_stream_index],
+        threading.Thread(target=add_subtitle_to_db,
+                         args=(self.flask_app, self.video, self.video_info[2][subtitle_stream_index],
                                self.video_info[2][subtitle_stream_index])).start()
         threading.Thread(target=stream_subtitle_for_chromecast,
                          args=(self.filename, self.video, subtitle_stream_index)).start()
@@ -171,7 +202,7 @@ class VideoStreamer(QWidget):
 
 
 if __name__ == "__main__":
-    server = Server(video_list_data)
+    server = Server()
     server.start()
-    app = VideoStreamerApp()
+    app = VideoStreamerApp(server.app)
     app.run(lambda: server.stop())

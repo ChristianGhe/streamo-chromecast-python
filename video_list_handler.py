@@ -1,22 +1,10 @@
 import json
 import os
-
-__data = {
-    "categories": [
-        {
-            "name": "Movies",
-            "hls": "http://{ip}:{port}/hls/",
-            "dash": "https://commondatastorage.googleapis.com/gtv-videos-bucket/CastVideos/dash/",
-            "mp4": "https://commondatastorage.googleapis.com/gtv-videos-bucket/CastVideos/mp4/",
-            "images": "https://commondatastorage.googleapis.com/gtv-videos-bucket/CastVideos/images/",
-            "tracks": "http://{ip}:{port}/tracks/",
-            "videos": []
-        }
-    ]
-}
+from sqlalchemy.exc import SQLAlchemyError
+from models import db, Movie, Subtitle
 
 
-def init_video_list(filename, data, ip_address, port):
+def init_video_list( filename, data, ip_address, port):
     print(f"Initializing video_list.json with ip address {ip_address} and port {port}")
     # Create video_list.json if it doesn't exist and create base structure
     if not os.path.exists(filename):
@@ -40,71 +28,96 @@ def set_ip_address_to_data(file_name, ip_address, port):
         json.dump(data, f, indent=4)
 
 
-def add_video_to_list(file_name, video_name, duration, subtitle_name, subtitle_language):
-    print(f"Adding video {video_name} to video_list.json with duration {duration} and subtitle {subtitle_name} "
-          f"and subtitle language {subtitle_language}")
-    with open(file_name, 'r') as f:
-        print("filename", f)
-        # load json file and replace ip of tracks and hls for "Movies" category
-        data = json.load(f)
-        print(data["categories"])
-        data["categories"][0]["videos"].append({
-            "subtitle": "description",
-            "sources": [
-                {
+def add_video_to_db(app, video_name, duration, sources=None):
+    """Add or update a video in the database"""
+    with app.app_context():
+        try:
+            movie = Movie.query.filter_by(title=video_name).first()
+            if not movie:
+                default_sources = [{
                     "type": "hls",
                     "mime": "application/x-mpegurl",
-                    "url": video_name + ".m3u8"
-                }
-            ],
-            "thumb": "images/DesigningForGoogleCast-480x270.jpg",
-            "image-480x270": "480x270/DesigningForGoogleCast2-480x270.jpg",
-            "image-780x1200": "780x1200/DesigningForGoogleCast-887x1200.jpg",
-            "title": video_name,
-            "studio": "Twenty Century Fox",
-            "duration": duration,
-            "tracks": [
-                {
-                    "id": "1",
-                    "type": "text",
-                    "subtype": "captions",
-                    "contentId": video_name + ".vtt",
-                    "name": subtitle_name,
-                    "language": subtitle_language
-                }
-            ]
-        })
-    with open(file_name, 'w') as f:
-        json.dump(data, f, indent=4)
+                    "url": f"{video_name}.m3u8"
+                }]
+                movie = Movie(
+                    title=video_name,
+                    studio="",
+                    duration=duration,
+                    subtitle="description",
+                    sources=json.dumps(sources or default_sources)
+                )
+                db.session.add(movie)
+            else:
+                movie.duration = duration
+                if sources:
+                    movie.sources = json.dumps(sources)
+
+            db.session.commit()
+            return movie
+        except SQLAlchemyError as e:
+            print(f"Database error occurred: {e}")
+            db.session.rollback()
+            raise
 
 
-def add_subtitle_to_list(file_name, video_name, duration, subtitle_name, subtitle_language):
-    print(f"Adding subtitle {subtitle_name} to video {video_name} in video_list.json")
-    with open(file_name, 'r') as f:
-        # load json file and replace ip of tracks and hls for "Movies" category
-        data = json.load(f)
-        video_found = False
-        for video in data["categories"][0]["videos"]:
-            if video["title"] == video_name:
-                # get tracks size and add new track with different id
-                track_size = len(video["tracks"])
-                video["tracks"].append({
-                    "id": str(track_size + 1),
-                    "type": "text",
-                    "subtype": "captions",
-                    "contentId": video_name + ".vtt",
-                    "name": subtitle_name,
-                    "language": subtitle_language
-                })
-                video_found = True
-                break
-        if not video_found:
-            print(f"Video {video_name} not found in video_list.json")
-            add_video_to_list(file_name, video_name, 0, subtitle_name, subtitle_language)
+def add_subtitle_to_db(app, video_name, subtitle_name, subtitle_language, content_id=None):
+    """Add a subtitle track to a video in the database"""
+    with app.app_context():
+        try:
+            movie = Movie.query.filter_by(title=video_name).first()
+            if not movie:
+                movie = add_video_to_db(video_name, 0)
 
-    with open(file_name, 'w') as f:
-        json.dump(data, f, indent=4)
+            content_id = content_id or f"{video_name}.vtt"
+            existing_subtitle = Subtitle.query.filter_by(
+                contentId=content_id,
+                movie_id=movie.id
+            ).first()
+
+            if not existing_subtitle:
+                subtitle = Subtitle(
+                    contentId=content_id,
+                    language=subtitle_language,
+                    name=subtitle_name,
+                    movie_id=movie.id
+                )
+                db.session.add(subtitle)
+                db.session.commit()
+
+        except SQLAlchemyError as e:
+            print(f"Database error occurred: {e}")
+            db.session.rollback()
+            raise
+
+
+def select_video_from_db(video_name):
+    try:
+        movie = Movie.query.filter_by(title=video_name).first()
+        if not movie:
+            print(f"Video {video_name} not found in database. Adding video.")
+
+        return movie
+
+    except SQLAlchemyError as e:
+        print(f"Database error occurred: {e}")
+        db.session.rollback()
+        # Handle the exception or re-raise it
+        raise
+
+
+def select_all_videos_from_db():
+    try:
+        movies = Movie.query.all()
+        return movies
+
+    except SQLAlchemyError as e:
+        print(f"Database error occurred: {e}")
+        db.session.rollback()
+        # Handle the exception or re-raise it
 
 
 if __name__ == '__main__':
-    add_video_to_list('video_list.json', "apvral-scenes.from.a.marriage.720p[flt]", 10196, "English", "en")
+    # add_video_to_list('video_list.json', "apvral-scenes.from.a.marriage.720p[flt]", 10196, "English", "en")
+    # select_video_from_db("apvral-scenes.from.a.marriage.720p[flt]")
+    movies = select_all_videos_from_db()
+    print(movies)

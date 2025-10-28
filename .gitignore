@@ -1,6 +1,57 @@
-/venv
-/ffmpeg
-/hls
-/tracks
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
 
+# FFmpeg binaries
+ffmpeg/
+
+# Video streaming output directories
+hls/
+tracks/
+
+# Application data files
 video_list.json
+example_video_json
+
+# Database
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+
+# PyQt
+*.ui.autosave
+*.qmlproject.user
+*.qmlproject.user.*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local

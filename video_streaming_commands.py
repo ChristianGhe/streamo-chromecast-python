@@ -3,6 +3,7 @@ import os
 import subprocess
 import time
 from queue import Queue
+from run_cmd_line_command import run_command
 
 
 def parse_stream(stream):
@@ -51,9 +52,10 @@ def print_current_dir():
 
 # stream video using ffmpeg as cmd line commands
 def stream_video_for_chromecast(video_path, base_folder, video_stream_index=0, audio_stream_index=0, ffmpeg_path=None):
-    os.makedirs(f'./hls/{base_folder}', exist_ok=True)
+    current_dir = os.getcwd()
+    os.makedirs(f'{current_dir}/hls/{base_folder}', exist_ok=True)
     input_code = [
-        ffmpeg_path if ffmpeg_path else './ffmpeg/ffmpeg',
+        ffmpeg_path if ffmpeg_path else f'{current_dir}/ffmpeg/ffmpeg',
         '-loglevel', 'debug',
         '-i',
         video_path,
@@ -66,32 +68,51 @@ def stream_video_for_chromecast(video_path, base_folder, video_stream_index=0, a
         '-hls_time', '10',
         '-hls_list_size', '0',
         '-hls_base_url', f'{base_folder}/',
-        '-hls_segment_filename', f'./hls/{base_folder}/%03d.ts',
-        f'./hls/{base_folder}.m3u8'
+        '-hls_segment_filename', f'{current_dir}/hls/{base_folder}/%03d.ts',
+        f'{current_dir}/hls/{base_folder}.m3u8'
     ]
     print("input:", input_code)
-    try:
-        output = subprocess.check_output(input_code, stderr=subprocess.STDOUT)
-        print("output:", output)
-    except subprocess.CalledProcessError as e:
-        print('Command failed with exit status', e.returncode)
-        print('Output:', e.output.decode())
+    rc = run_command(input_code)
+    print("rc stream video:", rc)
+    # try:
+    #     output = subprocess.check_output(input_code, stderr=subprocess.STDOUT)
+    #     print("output:", output)
+    # except subprocess.CalledProcessError as e:
+    #     print('Command failed with exit status', e.returncode)
+    #     print('Output:', e.output.decode())
 
 
 def stream_subtitle_for_chromecast(video_path, filename, subtitle_stream_index, ffmpeg_path=None):
-    input_code = [ffmpeg_path if ffmpeg_path else './ffmpeg/ffmpeg',
+    current_dir = os.getcwd()
+    input_code = [ffmpeg_path if ffmpeg_path else f'{current_dir}/ffmpeg/ffmpeg',
                   '-i', video_path,
                   '-map', f'0:s:{subtitle_stream_index}',
                   '-c:s', 'webvtt',
-                  f'./tracks/{filename}.vtt'
+                  f'{current_dir}/tracks/{filename}.vtt'
                   ]
     print("subtitle input:", input_code)
-    try:
-        output = subprocess.check_output(input_code, stderr=subprocess.STDOUT)
-        print("output:", output)
-    except subprocess.CalledProcessError as e:
-        print('Command failed with exit status', e.returncode)
-        print('Output:', e.output.decode())
+    rc = run_command(input_code)
+    print("rc stream subtitles:", rc)
+    # try:
+    #     output = subprocess.check_output(input_code, stderr=subprocess.STDOUT)
+    #     print("output:", output)
+    # except subprocess.CalledProcessError as e:
+    #     print('Command failed with exit status', e.returncode)
+    #     print('Output:', e.output.decode())
+
+
+def convert_srt_to_vtt(srt_path, filename, ffmpeg_path=None):
+    print("srt_path:", srt_path)
+    current_dir = os.getcwd()
+    input_code = [ffmpeg_path if ffmpeg_path else f'{current_dir}/ffmpeg/ffmpeg',
+                  '-y',
+                  '-i', srt_path,
+                  '-c:s', 'webvtt',
+                  f'{current_dir}/tracks/{filename}.vtt'
+                  ]
+    print("subtitle input:", input_code)
+    rc = run_command(input_code)
+    print("rc stream subtitles:", rc)
 
 
 if __name__ == '__main__':
@@ -108,6 +129,8 @@ if __name__ == '__main__':
     #     1,
     # )
     print_current_dir()
+    __srt_path = "D:/Movies/Three.Days.of.the.Condor.1975.720p.Blu-ray.DD5.1.x264-playHD/Three.Days.of.the.Condor.1975.720p.Blu-ray.DD5.1.x264-playHDen.srt"
+    convert_srt_to_vtt(__srt_path, "Three.Days.of.the.Condor.1975.720p.Blu-ray.DD5.1.x264-playHDen")
     # stream_subtitle_for_chromecast(__video_path, __base_folder, 0)
     # time.sleep(10)
     # get_video_info("D:\Movies\Enemy 2013 1080p BluRay x264 EbP\Enemy 2013 1080p BluRay x264 EbP.mkv")

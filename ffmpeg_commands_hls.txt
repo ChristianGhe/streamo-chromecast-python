@@ -1,0 +1,38 @@
+# convert file to cast it:
+# ffmpeg -i input.mp4 -c:v libx264 -c:a aac -ac 2 -ar 44100 -level 4.1 -maxrate 10M -bufsize 20M -hls_time 10 -hls_list_size 0 -hls_base_url alien/ -hls_segment_filename 'alien/%03d.ts' alien.m3u8
+# extract subtitles:
+# ffmpeg -i input.mp4 -map 0:s:0 -c:s webvtt output.vtt
+
+# "D:\\Movies\\Alien.1979.Director's.Cut.1080p.BluRay.DTS.x264-EBCP\\Alien.1979.Director's.Cut.1080p.BluRay.DTS.x264-EBCP.mkv"
+
+# D:\\ProgramFiles\\ffmpeg-20181018-f72b990-win64-static\\bin\\ffmpeg -i "D:\\Movies\\Alien.1979.Director's.Cut.1080p.BluRay.DTS.x264-EBCP\\Alien.1979.Director's.Cut.1080p.BluRay.DTS.x264-EBCP.mkv" -c:v libx264 -c:a aac -level 4.1 -maxrate 10M -bufsize 20M -hls_time 10 -hls_segment_filename "alien\\%03d.ts" alien.m3u8
+
+# D:\\ProgramFiles\\ffmpeg-20181018-f72b990-win64-static\\bin\\ffmpeg -i "D:\\Movies\\Alien.1979.Director's.Cut.1080p.BluRay.DTS.x264-EBCP\\Alien.1979.Director's.Cut.1080p.BluRay.DTS.x264-EBCP.mkv" -c:v libx264 -c:a aac -ac 2 -ar 44100 -level 4.1 -maxrate 10M -bufsize 20M -hls_time 10 -hls_list_size 0 -hls_base_url alien/ -hls_segment_filename "alien/%03d.ts" alien.m3u8
+
+# D:\\ProgramFiles\\ffmpeg-20181018-f72b990-win64-static\\bin\\ffmpeg -i "D:\\Movies\\The Banshees of Inisherin 2022 720p WEBRip DD+5.1 x264-NyHD\\The Banshees of Inisherin 2022 720p WEBRip DD+5.1 x264-NyHD.mkv" -c:v libx264 -c:a aac -ac 2 -ar 44100 -level 4.1 -maxrate 10M -bufsize 20M -hls_time 10 -hls_list_size 0 -hls_base_url bansheesInisherin/ -hls_segment_filename "bansheesInisherin/%03d.ts" bansheesInisherin.m3u8
+
+# D:\\ProgramFiles\\ffmpeg-20181018-f72b990-win64-static\\bin\\ffmpeg -i "D:\\Movies\\Alien.1979.Director's.Cut.1080p.BluRay.DTS.x264-EBCP\\Alien.1979.Director's.Cut.1080p.BluRay.DTS.x264-EBCP.mkv" -map 0:s:0 -c:s webvtt "tracks\\alien.vtt"
+
+
+# D:\\Movies The Banshees of Inisherin 2022 720p WEBRip DD+5.1 x264-NyHD\\The Banshees of Inisherin 2022 720p WEBRip DD+5.1 x264-NyHD"
+# D:\\ProgramFiles\\ffmpeg-20181018-f72b990-win64-static\\bin\\ffmpeg -i "D:\\Movies\\The Banshees of Inisherin 2022 720p WEBRip DD+5.1 x264-NyHD\\The Banshees of Inisherin 2022 720p WEBRip DD+5.1 x264-NyHD.srt" "D:\\Projects\\Chromecast\\tracks\\bansheesInisherin.vtt"
+
+# D:\\ProgramFiles\\ffmpeg-20181018-f72b990-win64-static\\bin\\ffmpeg -i "D:\Movies\Barbie.2023.1080p.MA.WEB-DL.DDP5.1.Atmos.H.264-FLUX\Barbie.2023.1080p.MA.WEB-DL.DDP5.1.Atmos.H.264-FLUX.srt" "D:\\Projects\\Chromecast\\tracks\\barbie.vtt"
+
+# D:\\ProgramFiles\\ffmpeg-20181018-f72b990-win64-static\\bin\\ffmpeg -i "D:\Movies\Barbie.2023.1080p.MA.WEB-DL.DDP5.1.Atmos.H.264-FLUX\Barbie.2023.1080p.MA.WEB-DL.DDP5.1.Atmos.H.264-FLUX.mkv" -map 0:s:0 -c:s webvtt "D:\\Projects\\Chromecast\\tracks\\barbie.vtt"
+
+
+
+# D:\\ProgramFiles\\ffmpeg-20181018-f72b990-win64-static\\bin\\ffmpeg -i "D:\Movies\Barbie.2023.1080p.MA.WEB-DL.DDP5.1.Atmos.H.264-FLUX\\Barbie.2023.1080p.MA.WEB-DL.DDP5.1.Atmos.H.264-FLUX.mkv" -c:v libx264 -c:a aac -ac 2 -ar 44100 -level 4.1 -maxrate 10M -bufsize 20M -hls_time 10 -hls_list_size 0 -hls_base_url barbie/ -hls_segment_filename "barbie/%03d.ts" barbie2023.m3u8
+
+
+# D:\\Projects\\Chromecast\\ffmpeg\\ffmpeg -i "D:\Movies\Enemy 2013 1080p BluRay x264 EbP\Enemy 2013 1080p BluRay x264 EbP.mkv" -c:v libx264 -c:a aac -ac 2 -ar 44100 -level 4.1 -maxrate 10M -bufsize 20M -hls_time 10 -hls_list_size 0 -hls_base_url enemy/ -hls_segment_filename "enemy/%03d.ts" enemy.m3u8
+# D:\\Projects\\Chromecast\\ffmpeg\\ffmpeg -i "D:\Movies\Enemy 2013 1080p BluRay x264 EbP\Enemy 2013 1080p BluRay x264 EbP.mkv" -map 0:s:0 -c:s webvtt "D:\\Projects\\Chromecast\\tracks\\enemy.vtt"
+
+# D:\\Projects\\Chromecast\\ffmpeg\\ffmpeg -i "D:\Movies\District.9.2009.Hybrid.720p.BluRay.DD5.1.x264-RightSiZE\District.9.2009.Hybrid.720p.BluRay.DD5.1.x264-RightSiZE.mkv" -map 0:s:0 -c:s webvtt "D:\\Projects\\Chromecast\\tracks\\district9.vtt"
+
+# D:\\Projects\\Chromecast\\ffmpeg\\ffmpeg -i "D:\Movies\District.9.2009.Hybrid.720p.BluRay.DD5.1.x264-RightSiZE\District.9.2009.Hybrid.720p.BluRay.DD5.1.x264-RightSiZE.mkv" -c:v libx264 -c:a aac -ac 2 -ar 44100 -level 4.1 -maxrate 10M -bufsize 20M -hls_time 10 -hls_list_size 0 -hls_base_url district9/ -hls_segment_filename "district9\\%03d.ts" district9.m3u8
+
+# D:\\Projects\\Chromecast\\ffmpeg\\ffmpeg -i "D:\Movies\District.9.2009.Hybrid.720p.BluRay.DD5.1.x264-RightSiZE\District.9.2009.Hybrid.720p.BluRay.DD5.1.x264-RightSiZE.mkv" -c:v libx264 -c:a aac -ac 2 -ar 44100 -level 4.1 -maxrate 10M -bufsize 20M -hls_time 10 -hls_list_size 0 -hls_base_url district9/ -hls_segment_filename "district9\\%03d.ts" -map 0:s:0 -c:s webvtt "D:\\Projects\\Chromecast\\tracks\\district9.vtt" district9.m3u8
+# "./ffmpeg/ffmpeg" -i "D:\\Movies\\Arthur.Christmas.2011.720p.BluRay.DD+5.1.x264-playHD\\Arthur.Christmas.2011.720p.BluRay.DD+5.1.x264-playHD.mkv" -map 0:v:0 -map 0:a:0 -c:v libx264 -c:a aac -ac 2 -ar 44100 -level 4.1 -maxrate 10M -bufsize 20M -hls_time 10 -hls_list_size 0 -hls_base_url /hls/Arthur_Christmas_2011_720p_BluRay_DD_5_1_x264-playHD -hls_segment_filename ./hls/Arthur_Christmas_2011_720p_BluRay_DD_5_1_x264-playHD/%03d.ts ./hls/Arthur_Christmas_2011_720p_BluRay_DD_5_1_x264-playHD/Arthur_Christmas_2011_720p_BluRay_DD_5_1_x264-playHD.m3u8
+#./ffmpeg/ffmpeg -i D:\\Movies\\Arthur.Christmas.2011.720p.BluRay.DD+5.1.x264-playHD\\Arthur.Christmas.2011.720p.BluRay.DD+5.1.x264-playHD.mkv -map 0:v:0 -map 0:a:1 -c:v libx264 -c:a aac -ac 2 -ar 44100 -level 4.1 -maxrate 10M -bufsize 20M -hls_time 10 -hls_list_size 0 -hls_base_url ./hls/Arthur_Christmas_2011_720p_BluRay_DD_5_1_x264-playHD -hls_segment_filename ./hls/Arthur_Christmas_2011_720p_BluRay_DD_5_1_x264-playHD/%03d.ts ./hls/Arthur_Christmas_2011_720p_BluRay_DD_5_1_x264-playHD/Arthur_Christmas_2011_720p_BluRay_DD_5_1_x264-playHD.m3u8
